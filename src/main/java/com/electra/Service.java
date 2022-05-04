@@ -1,0 +1,177 @@
+package com.electra;
+
+import java.sql.*;
+import java.util.ArrayList;
+
+@org.springframework.stereotype.Service
+public class Service {
+
+    int idInsertAngajat = 0;
+    public void addAngajat(String nume, String prenume, Double salariu) throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        con.setAutoCommit(false);
+        try {
+            PreparedStatement checkDuplicate = con.prepareStatement("select * from Angajati where Nume=? and Prenume=? and Salariu=?");
+            checkDuplicate.setString(1, nume);
+            checkDuplicate.setString(2, prenume);
+            checkDuplicate.setDouble(3, salariu);
+            checkDuplicate.executeQuery();
+            ResultSet rs = checkDuplicate.executeQuery();
+
+            if (!rs.next()) {
+                PreparedStatement addAngajat = con.prepareStatement("insert into Angajati(Nume,Prenume,Salariu) values (?,?,?)");
+                addAngajat.setString(1, nume);
+                addAngajat.setString(2, prenume);
+                addAngajat.setDouble(3, salariu);
+                addAngajat.executeUpdate();
+            }
+
+            PreparedStatement getID = con.prepareStatement("select * from Angajati where Nume=? and Prenume=?");
+            getID.setString(1, nume);
+            getID.setString(2, prenume);
+            ResultSet rs1 = getID.executeQuery();
+            while (rs1.next()) {
+                idInsertAngajat = rs1.getInt("ID_Angajat");
+            }
+            con.commit();
+            con.close();
+        }catch(SQLException e){
+            e.printStackTrace();
+            con.rollback();
+        }
+
+    }
+    public void addFunctieAngajat ( String numeFunctie, int nivel) throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        con.setAutoCommit(false);
+        try {
+            PreparedStatement checkDuplicate = con.prepareStatement("select * from Functie where ID_Angajat = ?");
+            checkDuplicate.setInt(1, idInsertAngajat);
+            ResultSet rs = checkDuplicate.executeQuery();
+            if (!rs.next()) {
+                PreparedStatement addFunctie = con.prepareStatement("insert into Functie values (?,?,?)");
+                addFunctie.setInt(1, idInsertAngajat);
+                addFunctie.setString(2, numeFunctie);
+                addFunctie.setInt(3, nivel);
+                addFunctie.executeUpdate();
+            }
+            con.commit();
+            con.close();
+        }catch (SQLException e){
+            e.printStackTrace();
+            con.rollback();
+        }
+    }
+
+    public String concediezAngajat() throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        PreparedStatement ps = con.prepareStatement("select * from Functie");
+        ResultSet rs = ps.executeQuery();
+        while(rs.next()){
+            int nivel = rs.getInt("Nivel");
+            int id = rs.getInt("ID_Angajat");
+            if(nivel < 5){
+                PreparedStatement ps2 = con.prepareStatement("delete from Functie where Nivel = ?");
+                ps2.setInt(1, nivel);
+                ps2.executeUpdate();
+                PreparedStatement ps3 = con.prepareStatement("delete from Angajati where ID_Angajat = ?");
+                ps3.setInt(1, id);
+                ps3.executeUpdate();
+            }
+        }
+        return "Vacanta Placuta!";
+    }
+
+    public ArrayList<Person> getList () throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        ArrayList<Person> list = new ArrayList<>();
+        PreparedStatement ps = con.prepareStatement("select * from Angajati inner join Functie on Angajati.id_angajat = Functie.id_angajat");
+        ResultSet rs = ps.executeQuery();
+        while(rs.next()){
+            Person angajat = new Person();
+            Functie functie = new Functie();
+            String nume = rs.getString("Nume");
+            String prenume = rs.getString("Prenume");
+            double salariu = rs.getDouble("Salariu");
+            String numeFunctie = rs.getString("Nume_functie");
+            int nivel = rs.getInt("Nivel");
+            functie.setNumeFunctie(numeFunctie);
+            functie.setNivel(nivel);
+            angajat.setNume(nume);
+            angajat.setPrenume(prenume);
+            angajat.setSalariu(salariu);
+            angajat.setFunctie(functie);
+            list.add(angajat);
+        }
+        return list;
+    }
+
+    public String marireSalariu() throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        PreparedStatement ps = con.prepareStatement("Select * from Functie");
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()){
+            int id = rs.getInt("ID_Angajat");
+            int nivel = rs.getInt("Nivel");
+            if(nivel >= 9) {
+                PreparedStatement ps2 = con.prepareStatement("update Angajati set Salariu = Salariu + 1000 where ID_Angajat = ?");
+                ps2.setInt(1, id);
+                ps2.executeUpdate();
+            }
+        }
+        return "Marire salariu cu succes celor cu nivelul peste 9, inclusiv!";
+    }
+
+    public ArrayList<String> startWork() throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        ArrayList<Person> listAngajati = new ArrayList<>();
+        ArrayList<String> listaStartWorking = new ArrayList<>();
+        PreparedStatement ps = con.prepareStatement("select * from Angajati inner join Functie on Angajati.id_angajat = Functie.id_angajat");
+        ResultSet rs = ps.executeQuery();
+        String str;
+        while(rs.next()) {
+            Person angajat = new Person();
+            Functie functie = new Functie();
+            String nume = rs.getString("Nume");
+            String prenume = rs.getString("Prenume");
+            double salariu = rs.getDouble("Salariu");
+            String numeFunctie = rs.getString("Nume_functie");
+            int nivel = rs.getInt("Nivel");
+            functie.setNumeFunctie(numeFunctie);
+            functie.setNivel(nivel);
+            angajat.setNume(nume);
+            angajat.setPrenume(prenume);
+            angajat.setSalariu(salariu);
+            angajat.setFunctie(functie);
+            listAngajati.add(angajat);
+        }
+        for (Person person : listAngajati) {
+            str = person.getPrenume() + ", lucrez ca " + person.getFunctie().getNumeFunctie();
+            listaStartWorking.add(str);
+        }
+        return listaStartWorking;
+    }
+
+    public String stopWorkingAs(String nume, String prenume, String updateNumeFunctie) throws SQLException {
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
+        PreparedStatement ps = con.prepareStatement("select * from Angajati inner join Functie on Angajati.id_angajat = Functie.id_angajat where Nume = ? and Prenume = ?");
+        ps.setString(1, nume);
+        ps.setString(2, prenume);
+        ResultSet rs = ps.executeQuery();
+        String numeFunctieActuala = "";
+        int id = 0;
+        while (rs.next()){
+            numeFunctieActuala = rs.getString("Nume_functie");
+            id = rs.getInt("ID_Angajat");
+            PreparedStatement ps2 = con.prepareStatement("update Functie set Nume_functie = ? where ID_Angajat = ?");
+            ps2.setString(1, updateNumeFunctie);
+            ps2.setInt(2, id);
+            if(updateNumeFunctie.equals(numeFunctieActuala)){
+                return "Angajatul are deja acesta functie in CV";
+            }else{
+                ps.executeUpdate();
+            }
+        }
+        return "Angajatul " + nume + " " + prenume + " nu mai lucreaza ca " + numeFunctieActuala + " ,ci lucreaza ca " + " " + updateNumeFunctie;
+    }
+}
