@@ -6,21 +6,22 @@ import java.util.ArrayList;
 @org.springframework.stereotype.Service
 public class Service {
 
-    int idInsertAngajat = 0;
-    public void addAngajat(String nume, String prenume, Double salariu) throws SQLException {
+
+    public void addAngajat(String nume, String prenume, double salariu, String numeFunctie, int nivel ) throws SQLException {
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
         con.setAutoCommit(false);
+        int idInsertAngajat;
         try {
-            PreparedStatement checkDuplicate = con.prepareStatement("select * from Angajati where Nume=? and Prenume=? and Salariu=?");
-            checkDuplicate.setString(1, nume);
-            checkDuplicate.setString(2, prenume);
-            checkDuplicate.setDouble(3, salariu);
-            checkDuplicate.executeQuery();
-            ResultSet rs = checkDuplicate.executeQuery();
+            PreparedStatement checkDuplicateAngajati = con.prepareStatement("select * from Angajati where Nume=? and Prenume=? and Salariu=?");
+            checkDuplicateAngajati.setString(1, nume);
+            checkDuplicateAngajati.setString(2, prenume);
+            checkDuplicateAngajati.setDouble(3, salariu);
+            checkDuplicateAngajati.executeQuery();
+            ResultSet rs = checkDuplicateAngajati.executeQuery();
 
             if (!rs.next()) {
                 PreparedStatement addAngajat = con.prepareStatement("insert into Angajati(Nume,Prenume,Salariu) values (?,?,?)");
-                addAngajat.setString(1, nume);
+                addAngajat.setString(1,nume);
                 addAngajat.setString(2, prenume);
                 addAngajat.setDouble(3, salariu);
                 addAngajat.executeUpdate();
@@ -32,32 +33,20 @@ public class Service {
             ResultSet rs1 = getID.executeQuery();
             while (rs1.next()) {
                 idInsertAngajat = rs1.getInt("ID_Angajat");
+                PreparedStatement checkDuplicateFunctie = con.prepareStatement("select * from Functie where ID_Angajat = ?");
+                checkDuplicateFunctie.setInt(1, idInsertAngajat);
+                ResultSet rsFunctie = checkDuplicateFunctie.executeQuery();
+                if(!rsFunctie.next()) {
+                    PreparedStatement addFunctie = con.prepareStatement("insert into Functie values (?,?,?)");
+                    addFunctie.setInt(1, idInsertAngajat);
+                    addFunctie.setString(2, numeFunctie);
+                    addFunctie.setInt(3, nivel);
+                    addFunctie.executeUpdate();
+                }
             }
             con.commit();
             con.close();
         }catch(SQLException e){
-            e.printStackTrace();
-            con.rollback();
-        }
-
-    }
-    public void addFunctieAngajat ( String numeFunctie, int nivel) throws SQLException {
-        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
-        con.setAutoCommit(false);
-        try {
-            PreparedStatement checkDuplicate = con.prepareStatement("select * from Functie where ID_Angajat = ?");
-            checkDuplicate.setInt(1, idInsertAngajat);
-            ResultSet rs = checkDuplicate.executeQuery();
-            if (!rs.next()) {
-                PreparedStatement addFunctie = con.prepareStatement("insert into Functie values (?,?,?)");
-                addFunctie.setInt(1, idInsertAngajat);
-                addFunctie.setString(2, numeFunctie);
-                addFunctie.setInt(3, nivel);
-                addFunctie.executeUpdate();
-            }
-            con.commit();
-            con.close();
-        }catch (SQLException e){
             e.printStackTrace();
             con.rollback();
         }
@@ -159,7 +148,7 @@ public class Service {
         ps.setString(2, prenume);
         ResultSet rs = ps.executeQuery();
         String numeFunctieActuala = "";
-        int id = 0;
+        int id;
         while (rs.next()){
             numeFunctieActuala = rs.getString("Nume_functie");
             id = rs.getInt("ID_Angajat");
@@ -169,9 +158,9 @@ public class Service {
             if(updateNumeFunctie.equals(numeFunctieActuala)){
                 return "Angajatul are deja acesta functie in CV";
             }else{
-                ps.executeUpdate();
+                ps2.executeUpdate();
             }
         }
-        return "Angajatul " + nume + " " + prenume + " nu mai lucreaza ca " + numeFunctieActuala + " ,ci lucreaza ca " + " " + updateNumeFunctie;
+        return "Angajatul " + nume + " " + prenume + " nu mai lucreaza ca " + numeFunctieActuala + " , aci lucreaza ca " + " " + updateNumeFunctie;
     }
 }

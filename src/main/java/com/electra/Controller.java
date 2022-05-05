@@ -16,9 +16,8 @@ public class Controller {
     }
 
     @PostMapping("/insert")
-    public void addAngajat(@RequestParam String nume, @RequestParam String prenume, @RequestParam Double salariu, @RequestParam String numeFunctie, @RequestParam int nivel) throws SQLException {
-        service.addAngajat(nume, prenume, salariu);
-        service.addFunctieAngajat(numeFunctie, nivel);
+    public void addAngajat(@RequestBody String nume, @RequestBody String prenume, @RequestBody double salariu, @RequestBody String numeFunctie, @RequestBody int nivel ) throws SQLException {
+        service.addAngajat(nume, prenume, salariu, numeFunctie, nivel );
     }
 
     @DeleteMapping("/delete")
