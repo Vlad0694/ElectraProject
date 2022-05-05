@@ -7,29 +7,29 @@ import java.util.ArrayList;
 public class Service {
 
 
-    public void addAngajat(String nume, String prenume, double salariu, String numeFunctie, int nivel ) throws SQLException {
+    public void addAngajat(Person angajat ) throws SQLException {
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Electra", "root", "parola06");
         con.setAutoCommit(false);
         int idInsertAngajat;
         try {
             PreparedStatement checkDuplicateAngajati = con.prepareStatement("select * from Angajati where Nume=? and Prenume=? and Salariu=?");
-            checkDuplicateAngajati.setString(1, nume);
-            checkDuplicateAngajati.setString(2, prenume);
-            checkDuplicateAngajati.setDouble(3, salariu);
+            checkDuplicateAngajati.setString(1, angajat.getNume());
+            checkDuplicateAngajati.setString(2, angajat.getPrenume());
+            checkDuplicateAngajati.setDouble(3, angajat.getSalariu());
             checkDuplicateAngajati.executeQuery();
             ResultSet rs = checkDuplicateAngajati.executeQuery();
 
             if (!rs.next()) {
                 PreparedStatement addAngajat = con.prepareStatement("insert into Angajati(Nume,Prenume,Salariu) values (?,?,?)");
-                addAngajat.setString(1,nume);
-                addAngajat.setString(2, prenume);
-                addAngajat.setDouble(3, salariu);
+                addAngajat.setString(1,angajat.getNume());
+                addAngajat.setString(2, angajat.getPrenume());
+                addAngajat.setDouble(3, angajat.getSalariu());
                 addAngajat.executeUpdate();
             }
 
             PreparedStatement getID = con.prepareStatement("select * from Angajati where Nume=? and Prenume=?");
-            getID.setString(1, nume);
-            getID.setString(2, prenume);
+            getID.setString(1, angajat.getNume());
+            getID.setString(2, angajat.getPrenume());
             ResultSet rs1 = getID.executeQuery();
             while (rs1.next()) {
                 idInsertAngajat = rs1.getInt("ID_Angajat");
@@ -39,8 +39,8 @@ public class Service {
                 if(!rsFunctie.next()) {
                     PreparedStatement addFunctie = con.prepareStatement("insert into Functie values (?,?,?)");
                     addFunctie.setInt(1, idInsertAngajat);
-                    addFunctie.setString(2, numeFunctie);
-                    addFunctie.setInt(3, nivel);
+                    addFunctie.setString(2, angajat.getFunctie().getNumeFunctie());
+                    addFunctie.setInt(3, angajat.getFunctie().getNivel());
                     addFunctie.executeUpdate();
                 }
             }
